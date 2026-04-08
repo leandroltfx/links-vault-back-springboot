@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import javax.security.auth.login.CredentialException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,6 +59,18 @@ public class GlobalExceptionHandler {
                 .build();
 
         return new ResponseEntity<>(apiResponseDTO, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    @ExceptionHandler(CredentialException.class)
+    public ResponseEntity<ApiResponseDTO> handleCredentialException(
+            CredentialException credentialException
+    ) {
+        ApiResponseDTO apiResponseDTO = ApiResponseDTO
+                .builder()
+                .message(credentialException.getMessage())
+                .data(null)
+                .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponseDTO);
     }
 
 }
