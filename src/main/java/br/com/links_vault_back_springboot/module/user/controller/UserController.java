@@ -2,15 +2,21 @@ package br.com.links_vault_back_springboot.module.user.controller;
 
 import br.com.links_vault_back_springboot.dto.ApiResponseDTO;
 import br.com.links_vault_back_springboot.module.user.dto.CreateUserRequestDTO;
+import br.com.links_vault_back_springboot.module.user.dto.UpdateEmailRequestDTO;
+import br.com.links_vault_back_springboot.module.user.dto.UpdatePasswordRequestDTO;
+import br.com.links_vault_back_springboot.module.user.dto.UpdateUsernameRequestDTO;
 import br.com.links_vault_back_springboot.module.user.useCase.CreateUserUseCase;
+import br.com.links_vault_back_springboot.module.user.useCase.UpdateEmailUseCase;
+import br.com.links_vault_back_springboot.module.user.useCase.UpdatePasswordUseCase;
+import br.com.links_vault_back_springboot.module.user.useCase.UpdateUsernameUseCase;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
@@ -18,6 +24,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final CreateUserUseCase createUserUseCase;
+    private final UpdateEmailUseCase updateEmailUseCase;
+    private final UpdateUsernameUseCase updateUsernameUseCase;
+    private final UpdatePasswordUseCase updatePasswordUseCase;
 
     @PostMapping
     public ResponseEntity<ApiResponseDTO> createUser(
@@ -31,6 +40,73 @@ public class UserController {
                         .data(result)
                         .build()
         );
+    }
+
+    @PatchMapping("/update-email")
+    public ResponseEntity<ApiResponseDTO> updateEmail(
+            HttpServletRequest httpServletRequest,
+            @Valid @RequestBody UpdateEmailRequestDTO updateEmailRequestDTO
+    ) {
+        var result = this.updateEmailUseCase.execute(
+                this.extractUserIdFromRequest(httpServletRequest),
+                updateEmailRequestDTO
+        );
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(
+                        ApiResponseDTO
+                                .builder()
+                                .message("E-mail alterado com sucesso!")
+                                .data(result)
+                                .build()
+                );
+    }
+
+    @PatchMapping("/update-username")
+    public ResponseEntity<ApiResponseDTO> updateUsername(
+            HttpServletRequest httpServletRequest,
+            @Valid @RequestBody UpdateUsernameRequestDTO updateUsernameRequestDTO
+    ) {
+        var result = this.updateUsernameUseCase.execute(
+                this.extractUserIdFromRequest(httpServletRequest),
+                updateUsernameRequestDTO
+        );
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(
+                        ApiResponseDTO
+                                .builder()
+                                .message("Nome de usuário alterado com sucesso!")
+                                .data(result)
+                                .build()
+                );
+    }
+
+    @PatchMapping("/update-password")
+    public ResponseEntity<ApiResponseDTO> updatePassword(
+            HttpServletRequest httpServletRequest,
+            @Valid @RequestBody UpdatePasswordRequestDTO updatePasswordRequestDTO
+    ) {
+        var result = this.updatePasswordUseCase.execute(
+                this.extractUserIdFromRequest(httpServletRequest),
+                updatePasswordRequestDTO
+        );
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(
+                        ApiResponseDTO
+                                .builder()
+                                .message("Senha alterada com sucesso!")
+                                .data(result)
+                                .build()
+                );
+    }
+
+    private UUID extractUserIdFromRequest(
+            HttpServletRequest httpServletRequest
+    ) {
+        var userId = httpServletRequest.getAttribute("user_id");
+        return UUID.fromString(userId.toString());
     }
 
 }
