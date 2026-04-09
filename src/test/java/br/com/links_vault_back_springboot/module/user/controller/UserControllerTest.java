@@ -3,6 +3,7 @@ package br.com.links_vault_back_springboot.module.user.controller;
 import br.com.links_vault_back_springboot.module.user.dto.*;
 import br.com.links_vault_back_springboot.module.user.useCase.CreateUserUseCase;
 import br.com.links_vault_back_springboot.module.user.useCase.UpdateEmailUseCase;
+import br.com.links_vault_back_springboot.module.user.useCase.UpdatePasswordUseCase;
 import br.com.links_vault_back_springboot.module.user.useCase.UpdateUsernameUseCase;
 import br.com.links_vault_back_springboot.service.JWTService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,6 +42,9 @@ class UserControllerTest {
 
     @MockBean
     private UpdateUsernameUseCase updateUsernameUseCase;
+
+    @MockBean
+    private UpdatePasswordUseCase updatePasswordUseCase;
 
     @MockBean
     private JWTService jwtService;
@@ -178,4 +182,48 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    @DisplayName(value = "Deve retornar o status 200 ao alterar a senha")
+    void shouldUpdatePasswordSuccessfully() throws Exception {
+
+        UUID userId = UUID.randomUUID();
+
+        UpdatePasswordRequestDTO request = new UpdatePasswordRequestDTO();
+        request.setPassword("new-password");
+
+        UserResponseDTO response = UserResponseDTO.builder()
+                .username("username")
+                .email("email@email.com")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        when(updatePasswordUseCase.execute(eq(userId), any()))
+                .thenReturn(response);
+
+        mockMvc.perform(patch("/users/update-password")
+                        .requestAttr("user_id", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message")
+                        .value("Senha alterada com sucesso!"))
+                .andExpect(jsonPath("$.data.email")
+                        .value("email@email.com"))
+                .andExpect(jsonPath("$.data.username")
+                        .value("username"));
+    }
+
+    @Test
+    @DisplayName(value = "Deve retornar o status 400 caso a senha não seja informada")
+    void shouldReturnBadRequestWhenUpdatePasswordRequestIsInvalid() throws Exception {
+
+        UpdatePasswordRequestDTO request = new UpdatePasswordRequestDTO();
+        request.setPassword("");
+
+        mockMvc.perform(patch("/users/update-password")
+                        .requestAttr("user_id", UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
 }
