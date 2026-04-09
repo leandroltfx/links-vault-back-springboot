@@ -1,11 +1,9 @@
 package br.com.links_vault_back_springboot.module.user.controller;
 
-import br.com.links_vault_back_springboot.module.user.dto.CreateUserRequestDTO;
-import br.com.links_vault_back_springboot.module.user.dto.CreateUserResponseDTO;
-import br.com.links_vault_back_springboot.module.user.dto.UpdateEmailRequestDTO;
-import br.com.links_vault_back_springboot.module.user.dto.UserResponseDTO;
+import br.com.links_vault_back_springboot.module.user.dto.*;
 import br.com.links_vault_back_springboot.module.user.useCase.CreateUserUseCase;
 import br.com.links_vault_back_springboot.module.user.useCase.UpdateEmailUseCase;
+import br.com.links_vault_back_springboot.module.user.useCase.UpdateUsernameUseCase;
 import br.com.links_vault_back_springboot.service.JWTService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -40,6 +38,9 @@ class UserControllerTest {
 
     @MockBean
     private UpdateEmailUseCase updateEmailUseCase;
+
+    @MockBean
+    private UpdateUsernameUseCase updateUsernameUseCase;
 
     @MockBean
     private JWTService jwtService;
@@ -126,6 +127,51 @@ class UserControllerTest {
         request.setEmail("");
 
         mockMvc.perform(patch("/users/update-email")
+                        .requestAttr("user_id", UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName(value = "Deve retornar o status 200 ao alterar o nome de usuário")
+    void shouldUpdateUsernameSuccessfully() throws Exception {
+
+        UUID userId = UUID.randomUUID();
+
+        UpdateUsernameRequestDTO request = new UpdateUsernameRequestDTO();
+        request.setUsername("new-username");
+
+        UserResponseDTO response = UserResponseDTO.builder()
+                .username("new-username")
+                .email("email@email.com")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        when(updateUsernameUseCase.execute(eq(userId), any()))
+                .thenReturn(response);
+
+        mockMvc.perform(patch("/users/update-username")
+                        .requestAttr("user_id", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message")
+                        .value("Nome de usuário alterado com sucesso!"))
+                .andExpect(jsonPath("$.data.email")
+                        .value("email@email.com"))
+                .andExpect(jsonPath("$.data.username")
+                        .value("new-username"));
+    }
+
+    @Test
+    @DisplayName(value = "Deve retornar o status 400 caso o nome de usuário não seja informado")
+    void shouldReturnBadRequestWhenUpdateUsernameRequestIsInvalid() throws Exception {
+
+        UpdateUsernameRequestDTO request = new UpdateUsernameRequestDTO();
+        request.setUsername("");
+
+        mockMvc.perform(patch("/users/update-username")
                         .requestAttr("user_id", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
