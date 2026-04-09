@@ -3,6 +3,7 @@ package br.com.links_vault_back_springboot.exception;
 import br.com.links_vault_back_springboot.dto.ApiResponseDTO;
 import br.com.links_vault_back_springboot.dto.FieldErrorDTO;
 import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -71,6 +72,18 @@ public class GlobalExceptionHandler {
                 .data(null)
                 .build();
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponseDTO);
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ApiResponseDTO> handleEntityNotFoundException(
+            EntityNotFoundException entityNotFoundException
+    ) {
+        ApiResponseDTO apiResponseDTO = ApiResponseDTO
+                .builder()
+                .message(entityNotFoundException.getMessage())
+                .data(null)
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponseDTO);
     }
 
 }
