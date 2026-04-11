@@ -1,6 +1,8 @@
 package br.com.links_vault_back_springboot.filter;
 
+import br.com.links_vault_back_springboot.dto.ApiResponseDTO;
 import br.com.links_vault_back_springboot.service.JWTService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +34,15 @@ public class SecurityFilter extends OncePerRequestFilter {
             var subjectToken = this.jwtService.validateToken(header);
             if (subjectToken.isEmpty()) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                ApiResponseDTO apiResponseDTO = ApiResponseDTO
+                        .builder()
+                        .message("Token inválido ou expirado.")
+                        .data(null)
+                        .build();
+                ObjectMapper mapper = new ObjectMapper();
+                response.getWriter().write(mapper.writeValueAsString(apiResponseDTO));
                 return;
             }
 
@@ -43,9 +54,22 @@ public class SecurityFilter extends OncePerRequestFilter {
             );
 
             SecurityContextHolder.getContext().setAuthentication(auth);
+        } else {
+            if (!request.getRequestURI().contains("login") && (!request.getMethod().equals("POST") || !request.getRequestURI().contains("users"))) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                ApiResponseDTO apiResponseDTO = ApiResponseDTO
+                        .builder()
+                        .message("Informe o token.")
+                        .data(null)
+                        .build();
+                ObjectMapper mapper = new ObjectMapper();
+                response.getWriter().write(mapper.writeValueAsString(apiResponseDTO));
+                return;
+            }
         }
 
         filterChain.doFilter(request, response);
     }
-
 }
